@@ -1,0 +1,19 @@
+name: MyApp
+options:
+  bundleIdPrefix: com.huyhihi
+targets:
+  MyApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: .
+        excludes:
+          - ".github/**"
+          - "project.yml"
+          - "build/**"
+          - "Payload/**"
+    settings:
+      base:
+        INFOPLIST_FILE: Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.huyhihi.myapp
