@@ -13,15 +13,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install XcodeGen and Generate Project
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies & Sync Capacitor
         run: |
-          brew install xcodegen
-          xcodegen generate
+          npm install
+          npm run build
+          npx cap sync ios
 
       - name: Build .app (Unsigned)
         run: |
-          xcodebuild -project MyApp.xcodeproj \
-            -scheme MyApp \
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath build \
