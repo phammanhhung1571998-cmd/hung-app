@@ -1,0 +1,12 @@
+{
+	"appId": "vn.saoke.chitieu",
+	"appName": "Sao Kê Chi Tiêu",
+	"webDir": "dist",
+	"android": {
+		"allowMixedContent": false,
+		"backgroundColor": "#eef4fb"
+	},
+	"server": {
+		"androidScheme": "https"
+	}
+}

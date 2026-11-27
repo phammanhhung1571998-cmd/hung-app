@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sao kê chi tiêu hàng tháng</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* Nền tổng thể có dải ánh sáng dịu nhẹ (soft ambient mesh gradient) làm nổi bật hiệu ứng Liquid Glass */
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #eef4fb;
+      background-image:
+        radial-gradient(at 8% 10%, rgba(125, 211, 252, 0.42) 0px, transparent 48%),
+        radial-gradient(at 92% 12%, rgba(167, 243, 208, 0.38) 0px, transparent 46%),
+        radial-gradient(at 85% 88%, rgba(196, 181, 253, 0.35) 0px, transparent 50%),
+        radial-gradient(at 15% 90%, rgba(253, 230, 138, 0.32) 0px, transparent 48%);
+      background-attachment: fixed;
+      color: #0f172a;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Khung thẻ kính chính bao bọc bảng sao kê */
+    .glass-sheet-card {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.66) 100%);
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow:
+        0 20px 45px -15px rgba(15, 23, 42, 0.12),
+        inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
+    }
+
+    /* HIỆU ỨNG LIQUID GLASS CHO TẤT CẢ Ô NHẬP DỮ LIỆU & MENU CHỌN */
+    .liquid-glass-input {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.50) 100%);
+      backdrop-filter: blur(12px) saturate(160%);
+      -webkit-backdrop-filter: blur(12px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.92);
+      box-shadow:
+        inset 0 1.5px 1px rgba(255, 255, 255, 0.92),
+        inset 0 -1px 1px rgba(148, 163, 184, 0.15),
+        0 2px 6px rgba(15, 23, 42, 0.06),
+        0 0 0 1px rgba(100, 116, 139, 0.25);
+      transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .liquid-glass-input:hover {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.66) 100%);
+      border-color: rgba(147, 197, 253, 0.95);
+      box-shadow:
+        inset 0 1.5px 1px rgba(255, 255, 255, 0.98),
+        0 3px 10px rgba(37, 99, 235, 0.10),
+        0 0 0 1px rgba(59, 130, 246, 0.35);
+    }
+
+    .liquid-glass-input:focus {
+      outline: none;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.85) 100%);
+      border-color: rgba(59, 130, 246, 0.85);
+      box-shadow:
+        inset 0 1.5px 1px rgba(255, 255, 255, 1),
+        0 0 0 3px rgba(59, 130, 246, 0.22),
+        0 4px 12px rgba(37, 99, 235, 0.14);
+    }
+
+    /* Tùy chỉnh mũi tên cho select Liquid Glass */
+    .liquid-glass-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23334155' stroke-width='2.4'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.55rem center;
+      background-size: 0.95rem 0.95rem;
+      padding-right: 1.85rem;
+    }
+
+    /* Phiên bản gọn cho ô chọn tháng bên trong cell "Quỹ tháng" */
+    .liquid-glass-select-compact {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23334155' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.32rem center;
+      background-size: 0.72rem 0.72rem;
+      padding-left: 0.45rem;
+      padding-right: 1.2rem;
+    }
+
+    /* Màu nền quy ước theo người chi */
+    .row-bap {
+      background-color: #dcfce7 !important; /* Xanh lá dịu mắt */
+      border-color: #86efac !important;
+    }
+    .row-kieu {
+      background-color: #fef9c3 !important; /* Vàng dịu mắt */
+      border-color: #fde047 !important;
+    }
+    .row-default {
+      background-color: rgba(255, 255, 255, 0.72);
+    }
+
+    /* Hiệu ứng báo hiệu nhẹ khi hàng được tick chọn xóa */
+    .row-marked-delete {
+      box-shadow: inset 0 0 0 2px rgba(244, 63, 94, 0.45);
+    }
+
+    /* Cấu trúc lưới 5 cột cố định chuẩn xác, bảo đảm thẳng hàng dọc tuyệt đối */
+    .statement-grid {
+      display: grid;
+      grid-template-columns: 140px 185px minmax(215px, 1fr) 155px 125px;
+      min-width: 820px;
+    }
+
+    /* Lưới nội bộ của Bảng 1 khớp 100% với Cột 1, Cột 2, Cột 3 phía trên */
+    .summary-table-1-grid {
+      display: grid;
+      grid-template-columns: 140px 185px minmax(215px, 1fr);
+    }
+
+    /* Lưới nội bộ của Bảng 2 */
+    .summary-table-2-grid {
+      display: grid;
+      grid-template-columns: 1fr 125px;
+    }
+
+    /* Tùy chỉnh thanh cuộn ngang mượt mà trên thiết bị nhỏ */
+    .sheet-scroll-container::-webkit-scrollbar {
+      height: 8px;
+    }
+    .sheet-scroll-container::-webkit-scrollbar-track {
+      background: rgba(226, 232, 240, 0.7);
+      border-radius: 9999px;
+    }
+    .sheet-scroll-container::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 9999px;
+    }
+    .sheet-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+
+    /* Hiệu ứng xuất hiện mượt mà cho khu vực Tất toán */
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .animate-settlement {
+      animation: fadeSlideUp 0.28s ease-out forwards;
+    }
+
+    /* TỐI ƯU HÓA IN ẤN / XUẤT PDF KHỔ NGANG (A4 LANDSCAPE) */
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
+
+    @media print {
+      html,
+      body {
+        background: #ffffff !important;
+        background-image: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .no-print,
+      .col-delete {
+        display: none !important;
+      }
+
+      main {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+      }
+
+      .glass-sheet-card {
+        background: #ffffff !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+      }
+
+      .sheet-scroll-container {
+        overflow: visible !important;
+        padding-bottom: 0 !important;
+      }
+
+      /* Giữ nguyên căn chỉnh thẳng hàng dọc của Cột Số tiền và đặt Bảng 1 & Bảng 2 cạnh nhau gọn trên 1 trang ngang */
+      .statement-grid {
+        min-width: 100% !important;
+        width: 100% !important;
+        grid-template-columns: 115px 165px minmax(180px, 1fr) 265px !important;
+      }
+
+      .summary-table-1-grid {
+        grid-template-columns: 115px 165px minmax(180px, 1fr) !important;
+      }
+
+      .settlement-table-2-wrapper {
+        grid-column: 4 / 5 !important;
+        margin-left: 10px !important;
+      }
+
+      /* Hiển thị giá trị trong ô input/select rõ nét, không cắt chữ, không hiện mũi tên dropdown */
+      .liquid-glass-input {
+        background: rgba(255, 255, 255, 0.85) !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+
+      .liquid-glass-select,
+      #headerMonthSelect,
+      #fundMonthSelect {
+        background-image: none !important;
+        padding-right: 0.5rem !important;
+      }
+
+      .row-bap {
+        background-color: #dcfce7 !important;
+      }
+      .row-kieu {
+        background-color: #fef9c3 !important;
+      }
+      .row-marked-delete {
+        box-shadow: none !important;
+      }
+    }
+
+    /* Chế độ chụp ảnh PNG (áp dụng trên bản sao của trang) */
+    .png-export .no-print, .png-export .col-delete { display: none !important; }
+    .png-export .glass-sheet-card { background: #ffffff !important; backdrop-filter: none !important; box-shadow: none !important; border: none !important; }
+    .png-export .sheet-scroll-container { overflow: visible !important; }
+    .png-export .liquid-glass-input { background: #ffffff !important; backdrop-filter: none !important; box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+    .png-export select { background-image: none !important; padding-right: 0.5rem !important; }
+    .png-export .row-bap { background-color: #dcfce7 !important; }
+    .png-export .row-kieu { background-color: #fef9c3 !important; }
+    .png-export .row-marked-delete { box-shadow: none !important; }
+    .png-export .animate-settlement { animation: none !important; opacity: 1 !important; transform: none !important; }
+    .png-export [data-png-field] { background-image: none !important; }
+
+    /* Khóa giao diện khi chưa đăng nhập */
+    body.is-locked main { display: none; }
+    body.is-locked { overflow: hidden; }
+    @media print { #lockScreen, #archiveModal { display: none !important; } }
+  </style>
+</head>
+<body class="is-locked min-h-screen py-6 px-3 sm:px-6 lg:px-8 antialiased">
+
+  <!-- Container chính của trang sao kê -->
+  <main class="max-w-5xl mx-auto">
+    <!-- Thanh công cụ tài khoản -->
+    <div class="no-print flex justify-end gap-2 mb-3">
+      <button type="button" id="btnChangePw" class="px-3 py-1.5 rounded-xl bg-white/80 hover:bg-white border border-slate-300 text-slate-700 text-xs font-semibold shadow-sm cursor-pointer">Đổi / xóa mật khẩu</button>
+      <button type="button" id="btnLogout" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold shadow-sm cursor-pointer">Đăng xuất</button>
+    </div>
+    <div id="sheetCard" class="glass-sheet-card rounded-3xl p-4 sm:p-8">
+
+      <!-- 1. TIÊU ĐỀ TRANG WEB: Sao kê tháng [Dropdown Liquid Glass] -->
+      <header class="mb-6 pb-5 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-2.5">
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 flex items-center flex-wrap gap-2.5">
+            <span>Sao kê tháng</span>
+            <span class="relative inline-flex items-center">
+              <select
+                id="headerMonthSelect"
+                aria-label="Chọn tháng sao kê"
+                class="liquid-glass-input appearance-none text-blue-700 font-extrabold text-2xl sm:text-3xl pl-4 pr-10 py-1 rounded-2xl cursor-pointer"
+              >
+                <!-- Các option tháng 1 - 12 (mặc định Tháng 11) -->
+              </select>
+              <svg class="no-print w-5 h-5 text-blue-600 pointer-events-none absolute right-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </span>
+          </h1>
+        </div>
+
+        <!-- Chú thích quy ước màu sắc trực quan -->
+        <div class="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-slate-700">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#dcfce7] border border-[#86efac] text-green-950 shadow-xs">
+            <span class="w-2.5 h-2.5 rounded-full bg-green-600"></span> Bắp
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#fef9c3] border border-[#fde047] text-yellow-950 shadow-xs">
+            <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> Kiều
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/85 border border-slate-300 text-slate-800 shadow-xs">
+            <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Hưng
+          </span>
+        </div>
+      </header>
+
+      <!-- Vùng cuộn ngang bảo toàn cấu trúc lưới cột thẳng hàng tuyệt đối -->
+      <div class="sheet-scroll-container overflow-x-auto pb-2">
+        <div class="min-w-[820px] w-full">
+
+          <!-- 3. BẢNG NHẬP SỐ LIỆU 5 CỘT (125px | 185px | 1fr | 155px | 125px) -->
+          <div class="rounded-2xl border border-slate-300/90 overflow-hidden shadow-sm bg-white/50">
+            <!-- Header 5 cột -->
+            <div class="statement-grid bg-[#0f172a] text-white font-semibold text-xs uppercase tracking-wider">
+              <div class="py-3 px-3 text-center border-r border-slate-700">STT</div>
+              <div class="py-3 px-3.5 text-right border-r border-slate-700">Số tiền</div>
+              <div class="py-3 px-3.5 text-left border-r border-slate-700">Mục chi</div>
+              <div class="py-3 px-3 text-center border-r border-slate-700">Người chi</div>
+              <div class="col-delete py-3 px-2 text-center">Chọn xóa</div>
+            </div>
+
+            <!-- Danh sách 15 hàng mặc định -->
+            <div id="expenseTableBody" class="divide-y divide-slate-200/90">
+              <!-- Khởi tạo bằng JavaScript -->
+            </div>
+          </div>
+
+          <!-- 4. BỐN NÚT ĐIỀU KHIỂN Ở CUỐI BẢNG -->
+          <div class="no-print my-5">
+            <div class="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
+              <!-- Nút 1: Thêm hàng -->
+              <button
+                type="button"
+                id="btnAddRow"
+                class="shrink-0 whitespace-nowrap inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.99] text-white font-semibold text-sm shadow-sm transition-all cursor-pointer"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Thêm hàng</span>
+              </button>
+
+              <!-- Nút 2: Xóa hàng -->
+              <button
+                type="button"
+                id="btnDeleteRows"
+                class="shrink-0 whitespace-nowrap inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-50/90 hover:bg-rose-100 active:scale-[0.99] text-rose-700 border border-rose-200 font-semibold text-sm shadow-sm transition-all cursor-pointer"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span>Xóa hàng</span>
+              </button>
+
+              <!-- Nút: Xóa toàn bộ dữ liệu trang làm việc -->
+              <button
+                type="button"
+                id="btnClearAll"
+                class="shrink-0 whitespace-nowrap inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-semibold text-sm shadow-sm transition-all cursor-pointer"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span id="btnClearAllLabel">Xóa toàn bộ</span>
+              </button>
+
+              <button type="button" id="btnSaveDraft"
+                class="shrink-0 whitespace-nowrap inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition-all cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <span>Lưu</span>
+              </button>
+              <button type="button" id="btnOpenArchive"
+                class="shrink-0 whitespace-nowrap inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/90 hover:bg-white active:scale-[0.99] text-slate-800 border border-slate-300 font-semibold text-sm shadow-sm transition-all cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                <span>Kho lưu trữ</span>
+              </button>
+
+              <!-- Nút 3: Tất toán -->
+              <button
+                type="button"
+                id="btnSettle"
+                class="shrink-0 whitespace-nowrap inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span>Tất toán</span>
+              </button>
+
+
+            </div>
+          </div>
+
+          <!-- 5. KHU VỰC HIỂN THỊ BẢNG 1 & BẢNG 2 SAU KHI ẤN "TẤT TOÁN" -->
+          <section id="settlementSection" class="hidden mt-4 pt-2">
+            <!-- Dùng chung cấu trúc lưới 5 cột với bảng trên để Cột Số tiền của Bảng 1 thẳng hàng dọc 100% -->
+            <div class="statement-grid items-start">
+
+              <!-- BẢNG 1: Trải qua Cột 1 (125px), Cột 2 (185px), Cột 3 (1fr) -->
+              <div style="grid-column: 1 / 4;" class="rounded-2xl border border-slate-300/90 overflow-hidden shadow-sm bg-white/75">
+                <!-- Header Bảng 1 -->
+                <div class="summary-table-1-grid bg-slate-100/90 text-slate-700 text-xs uppercase tracking-wider font-bold border-b border-slate-300">
+                  <div class="py-2.5 px-3 text-left border-r border-slate-300">Khoản mục</div>
+                  <div class="py-2.5 px-3.5 text-right border-r border-slate-300">Số tiền</div>
+                  <div class="py-2.5 px-3.5 text-left">Ghi chú</div>
+                </div>
+
+                <div class="divide-y divide-slate-200/90 text-sm">
+                  <!-- Hàng 1: Tổng tiền (Chữ màu đỏ, in đậm) -->
+                  <div class="summary-table-1-grid items-center bg-white/65">
+                    <div class="py-2.5 px-3 font-semibold text-slate-800 border-r border-slate-200 h-full flex items-center">
+                      Tổng tiền
+                    </div>
+                    <div
+                      id="totalExpenseCell"
+                      class="py-2.5 px-3.5 text-right font-bold text-red-600 tabular-nums border-r border-slate-200 h-full flex items-center justify-end select-all"
+                    >
+                      0
+                    </div>
+                    <div class="p-1.5">
+                      <input
+                        type="text"
+                        placeholder="Ghi chú..."
+                        class="note-input liquid-glass-input w-full px-2.5 py-1.5 text-sm text-slate-800 placeholder-slate-400 rounded-xl"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Hàng 2: Quỹ tháng [Dropdown chọn tháng 1-12] + Ô nhập Quỹ tháng (Liquid Glass) -->
+                  <div class="summary-table-1-grid items-center bg-white/45">
+                    <div class="py-2 px-2 font-semibold text-slate-800 border-r border-slate-200 h-full flex items-center justify-between gap-1 overflow-hidden">
+                      <span class="whitespace-nowrap text-[13px]">Quỹ tháng</span>
+                      <select
+                        id="fundMonthSelect"
+                        aria-label="Chọn tháng quỹ"
+                        class="liquid-glass-input liquid-glass-select-compact text-blue-700 font-bold text-xs py-1 rounded-lg cursor-pointer shrink-0"
+                      >
+                        <!-- Render tháng 1 - 12 -->
+                      </select>
+                    </div>
+                    <div class="p-1.5 border-r border-slate-200">
+                      <input
+                        type="text"
+                        id="fundAmountInput"
+                        inputmode="numeric"
+                        placeholder="0"
+                        class="liquid-glass-input w-full px-2.5 py-1.5 text-right font-bold text-slate-900 tabular-nums rounded-xl"
+                      />
+                    </div>
+                    <div class="p-1.5">
+                      <input
+                        type="text"
+                        placeholder="Ghi chú..."
+                        class="note-input liquid-glass-input w-full px-2.5 py-1.5 text-sm text-slate-800 placeholder-slate-400 rounded-xl"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Hàng 3: Còn lại = Quỹ tháng - Tổng tiền -->
+                  <div class="summary-table-1-grid items-center bg-white/65">
+                    <div class="py-2.5 px-3 font-semibold text-slate-800 border-r border-slate-200 h-full flex items-center">
+                      Còn lại
+                    </div>
+                    <div
+                      id="remainingAmountCell"
+                      class="py-2.5 px-3.5 text-right font-bold text-slate-900 tabular-nums border-r border-slate-200 h-full flex items-center justify-end select-all"
+                    >
+                      0
+                    </div>
+                    <div class="p-1.5">
+                      <input
+                        type="text"
+                        placeholder="Ghi chú..."
+                        class="note-input liquid-glass-input w-full px-2.5 py-1.5 text-sm text-slate-800 placeholder-slate-400 rounded-xl"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Hàng 4: Thực tế (Ô nhập Liquid Glass) -->
+                  <div class="summary-table-1-grid items-center bg-white/45">
+                    <div class="py-2.5 px-3 font-semibold text-slate-800 border-r border-slate-200 h-full flex items-center">
+                      Thực tế
+                    </div>
+                    <div class="p-1.5 border-r border-slate-200">
+                      <input
+                        type="text"
+                        id="actualAmountInput"
+                        inputmode="numeric"
+                        placeholder="0"
+                        class="liquid-glass-input w-full px-2.5 py-1.5 text-right font-bold text-slate-900 tabular-nums rounded-xl"
+                      />
+                    </div>
+                    <div class="p-1.5">
+                      <input
+                        type="text"
+                        placeholder="Ghi chú..."
+                        class="note-input liquid-glass-input w-full px-2.5 py-1.5 text-sm text-slate-800 placeholder-slate-400 rounded-xl"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Hàng 5: Chênh lệch = Thực tế - Còn lại -->
+                  <div class="summary-table-1-grid items-center bg-white/65">
+                    <div class="py-2.5 px-3 font-semibold text-slate-800 border-r border-slate-200 h-full flex items-center">
+                      Chênh lệch
+                    </div>
+                    <div
+                      id="differenceAmountCell"
+                      class="py-2.5 px-3.5 text-right font-bold text-slate-900 tabular-nums border-r border-slate-200 h-full flex items-center justify-end select-all"
+                    >
+                      0
+                    </div>
+                    <div class="p-1.5">
+                      <input
+                        type="text"
+                        placeholder="Ghi chú..."
+                        class="note-input liquid-glass-input w-full px-2.5 py-1.5 text-sm text-slate-800 placeholder-slate-400 rounded-xl"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BẢNG 2: "SỐ TIỀN PHẢI TRẢ" (Nằm ngay bên cạnh Bảng 1, trải qua Cột 4 & Cột 5) -->
+              <div style="grid-column: 4 / 6;" class="settlement-table-2-wrapper ml-3">
+              <div class="rounded-2xl border border-slate-300/90 overflow-hidden shadow-sm bg-white/85">
+                <div class="bg-slate-800 text-white text-xs uppercase tracking-wider font-bold py-2.5 px-3 text-center border-b border-slate-700">
+                  Số tiền phải trả
+                </div>
+
+                <div class="divide-y divide-slate-200 text-sm">
+                  <!-- Hàng 1: Bắp tiêu (2 ô nền XANH LÁ khớp màu Bắp) -->
+                  <div class="summary-table-2-grid bg-[#dcfce7]">
+                    <div class="py-2.5 px-3 font-semibold text-slate-900 border-r border-[#86efac]">
+                      Bắp tiêu
+                    </div>
+                    <div
+                      id="bapTotalCell"
+                      class="py-2.5 px-3 text-right font-bold text-slate-900 tabular-nums select-all"
+                    >
+                      0
+                    </div>
+                  </div>
+
+                  <!-- Hàng 2: Kiều tiêu (2 ô nền VÀNG khớp màu Kiều) -->
+                  <div class="summary-table-2-grid bg-[#fef9c3]">
+                    <div class="py-2.5 px-3 font-semibold text-slate-900 border-r border-[#fde047]">
+                      Kiều tiêu
+                    </div>
+                    <div
+                      id="kieuTotalCell"
+                      class="py-2.5 px-3 text-right font-bold text-slate-900 tabular-nums select-all"
+                    >
+                      0
+                    </div>
+                  </div>
+
+                  <!-- Hàng 3: Hưng tiêu (2 ô KHÔNG TÔ MÀU / nền trắng khớp Hưng) -->
+                  <div class="summary-table-2-grid bg-white">
+                    <div class="py-2.5 px-3 font-semibold text-slate-900 border-r border-slate-200">
+                      Hưng tiêu
+                    </div>
+                    <div
+                      id="hungTotalCell"
+                      class="py-2.5 px-3 text-right font-bold text-slate-900 tabular-nums select-all"
+                    >
+                      0
+                    </div>
+                  </div>
+
+                  <!-- Hàng 4: Tiền sau trả nợ = Kiều tiêu + Hưng tiêu (2 ô CHỮ ĐỎ IN ĐẬM) -->
+                  <div class="summary-table-2-grid bg-rose-50/50">
+                    <div class="py-2.5 px-3 font-bold text-red-600 border-r border-slate-200">
+                      Tiền sau trả nợ
+                    </div>
+                    <div
+                      id="afterDebtTotalCell"
+                      class="py-2.5 px-3 text-right font-bold text-red-600 tabular-nums select-all"
+                    >
+                      0
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nút Lưu trữ & Xuất PDF: nằm dưới bảng "Số tiền phải trả", chỉ hiện sau khi Tất toán -->
+              <div id="settleActions" class="no-print mt-3 flex flex-wrap items-center gap-2" style="display:none">
+              <button type="button" id="btnArchiveSave"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-violet-600/20 transition-all cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                <span>Lưu trữ</span>
+              </button>
+              <!-- Nút 4: Xuất PDF (mặc định khổ ngang Landscape) -->
+              <button
+                type="button"
+                id="btnExportPdf"
+               
+                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Xuất PDF</span>
+              </button>
+              <button type="button" id="btnExportPng"
+                class="shrink-0 whitespace-nowrap inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-sky-600/20 transition-all cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4-4a3 3 0 014 0l4 4m-2-2l1-1a3 3 0 014 0l2 2M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 3h.01"/></svg>
+                <span id="btnExportPngLabel">Xuất PNG</span>
+              </button>
+              </div>
+              </div>
+
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MÀN HÌNH ĐĂNG NHẬP -->
+  <div id="lockScreen" class="no-print fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#eef4fb]/85 backdrop-blur-md">
+    <div class="glass-sheet-card rounded-3xl p-6 sm:p-8 w-full max-w-sm">
+      <h2 id="lockTitle" class="text-xl font-extrabold text-slate-900"></h2>
+      <p id="lockDesc" class="text-sm text-slate-600 mt-1 mb-4"></p>
+      <form id="lockForm" class="space-y-3" autocomplete="off">
+        <input type="password" id="lockSecret" placeholder="Mật khẩu bí mật" class="liquid-glass-input w-full px-3 py-2 rounded-xl text-slate-900" />
+        <input type="password" id="lockPw" placeholder="Mật khẩu" class="liquid-glass-input w-full px-3 py-2 rounded-xl text-slate-900" />
+        <input type="password" id="lockPw2" placeholder="Nhập lại mật khẩu" class="liquid-glass-input w-full px-3 py-2 rounded-xl text-slate-900" />
+        <p id="lockError" class="text-sm font-semibold text-rose-600 min-h-[1.25rem]"></p>
+        <button type="submit" id="lockSubmit" class="w-full px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md cursor-pointer"></button>
+        <button type="button" id="lockDelete" class="w-full px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-sm cursor-pointer">Xóa mật khẩu</button>
+        <button type="button" id="lockLink" class="w-full text-center text-xs font-semibold text-blue-700 hover:underline cursor-pointer"></button>
+      </form>
+    </div>
+  </div>
+
+  <!-- KHO LƯU TRỮ -->
+  <div id="archiveModal" class="no-print hidden fixed inset-0 z-[55] flex items-center justify-center p-3 bg-slate-900/40 backdrop-blur-sm">
+    <div class="glass-sheet-card rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-200/80">
+        <h2 id="archiveTitle" class="text-lg font-extrabold text-slate-900">Kho lưu trữ</h2>
+        <div class="flex gap-2">
+          <button type="button" id="archiveBack" class="hidden px-3 py-1.5 rounded-xl bg-white/90 border border-slate-300 text-slate-700 text-sm font-semibold cursor-pointer">← Danh sách</button>
+          <button type="button" id="archiveClose" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold cursor-pointer">Đóng</button>
+        </div>
+      </div>
+      <div id="archiveBody" class="p-5 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <!-- Hộp thông báo nổi tinh tế (thay thế hoàn toàn alert/confirm) -->
+  <div
+    id="toastContainer"
+    aria-live="polite"
+    class="no-print fixed bottom-5 right-5 z-[80] flex flex-col gap-2 pointer-events-none"
+  ></div>
+
+  <script>
+    /**
+     * ỨNG DỤNG SAO KÊ CHI TIÊU HÀNG THÁNG (LIQUID GLASS EDITION)
+     * - Hiệu ứng kính lỏng Liquid Glass cho toàn bộ ô nhập liệu.
+     * - Đồng bộ tháng 2 chiều giữa tiêu đề và Quỹ tháng (mặc định Tháng 11).
+     * - Tự động xóa các hàng trống khi ấn Tất toán.
+     * - Hỗ trợ xuất PDF mặc định khổ ngang (A4 Landscape).
+     */
+    (function () {
+      'use strict';
+
+      const DEFAULT_ROW_COUNT = 15;
+      const DEFAULT_MONTH = 11;
+
+      const headerMonthSelect = document.getElementById('headerMonthSelect');
+      const fundMonthSelect = document.getElementById('fundMonthSelect');
+      const expenseTableBody = document.getElementById('expenseTableBody');
+
+      const btnAddRow = document.getElementById('btnAddRow');
+      const btnDeleteRows = document.getElementById('btnDeleteRows');
+      const btnSettle = document.getElementById('btnSettle');
+      const btnExportPdf = document.getElementById('btnExportPdf');
+
+      const settlementSection = document.getElementById('settlementSection');
+
+      // Các ô của Bảng 1
+      const totalExpenseCell = document.getElementById('totalExpenseCell');
+      const fundAmountInput = document.getElementById('fundAmountInput');
+      const remainingAmountCell = document.getElementById('remainingAmountCell');
+      const actualAmountInput = document.getElementById('actualAmountInput');
+      const differenceAmountCell = document.getElementById('differenceAmountCell');
+
+      // Các ô của Bảng 2
+      const bapTotalCell = document.getElementById('bapTotalCell');
+      const kieuTotalCell = document.getElementById('kieuTotalCell');
+      const hungTotalCell = document.getElementById('hungTotalCell');
+      const afterDebtTotalCell = document.getElementById('afterDebtTotalCell');
+
+      const toastContainer = document.getElementById('toastContainer');
+
+      function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        const styles = {
+          info: 'bg-slate-800/95 text-white border-slate-700',
+          warning: 'bg-amber-600/95 text-white border-amber-500',
+          success: 'bg-emerald-600/95 text-white border-emerald-500'
+        };
+
+        toast.className = `pointer-events-auto backdrop-blur-md px-4 py-2.5 rounded-xl shadow-lg border text-sm font-medium transition-all duration-200 opacity-0 translate-y-2 ${styles[type] || styles.info}`;
+        toast.textContent = message;
+        toastContainer.appendChild(toast);
+
+        requestAnimationFrame(() => {
+          toast.classList.remove('opacity-0', 'translate-y-2');
+        });
+
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-y-2');
+          setTimeout(() => toast.remove(), 220);
+        }, 2600);
+      }
+
+      function formatNumberWithCommas(num) {
+        if (num === null || num === undefined || Number.isNaN(num)) {
+          return '0';
+        }
+        const rounded = Math.round(num);
+        const isNegative = rounded < 0;
+        const absDigits = Math.abs(rounded).toString();
+        const formatted = absDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return isNegative ? `-${formatted}` : formatted;
+      }
+
+      function parseFormattedNumber(str) {
+        if (!str || typeof str !== 'string') return 0;
+        const cleaned = str.replace(/,/g, '').trim();
+        if (cleaned === '' || cleaned === '-') return 0;
+        const parsed = Number(cleaned);
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+
+      function handleLiveCurrencyInput(inputEl, allowNegative = false) {
+        const rawValue = inputEl.value;
+        const selectionStart = inputEl.selectionStart || 0;
+
+        const beforeCursor = rawValue.slice(0, selectionStart);
+        const meaningfulCharsBefore = (beforeCursor.match(/[\d-]/g) || []).length;
+
+        let isNeg = false;
+        if (allowNegative && rawValue.trim().startsWith('-')) {
+          isNeg = true;
+        }
+        const digitsOnly = rawValue.replace(/\D/g, '');
+
+        if (digitsOnly === '') {
+          inputEl.value = isNeg ? '-' : '';
+          return;
+        }
+
+        const normalizedDigits = digitsOnly.replace(/^0+(?=\d)/, '');
+        const formattedDigits = normalizedDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        const finalValue = isNeg ? `-${formattedDigits}` : formattedDigits;
+
+        inputEl.value = finalValue;
+
+        let newCursorPos = 0;
+        let counted = 0;
+        while (newCursorPos < finalValue.length && counted < meaningfulCharsBefore) {
+          if (/[\d-]/.test(finalValue[newCursorPos])) {
+            counted++;
+          }
+          newCursorPos++;
+        }
+        inputEl.setSelectionRange(newCursorPos, newCursorPos);
+      }
+
+      /**
+       * Cập nhật tiêu đề tài liệu theo tháng đang chọn (hỗ trợ tên file khi xuất PDF)
+       */
+      function updateDocumentTitle(monthValue) {
+        document.title = `Sao_ke_thang_${monthValue}`;
+      }
+
+      /**
+       * Khởi tạo danh sách chọn Tháng 1 -> Tháng 12 (mặc định Tháng 11)
+       * và đồng bộ 2 chiều giữa tiêu đề trang web với mục "Quỹ tháng"
+       */
+      function initMonthDropdowns() {
+        for (let m = 1; m <= 12; m++) {
+          const optHeader = document.createElement('option');
+          optHeader.value = String(m);
+          optHeader.textContent = String(m);
+          if (m === DEFAULT_MONTH) optHeader.selected = true;
+          headerMonthSelect.appendChild(optHeader);
+
+          const optFund = document.createElement('option');
+          optFund.value = String(m);
+          optFund.textContent = String(m);
+          if (m === DEFAULT_MONTH) optFund.selected = true;
+          fundMonthSelect.appendChild(optFund);
+        }
+
+        updateDocumentTitle(DEFAULT_MONTH);
+
+        headerMonthSelect.addEventListener('change', () => {
+          fundMonthSelect.value = headerMonthSelect.value;
+          updateDocumentTitle(headerMonthSelect.value);
+        });
+
+        fundMonthSelect.addEventListener('change', () => {
+          headerMonthSelect.value = fundMonthSelect.value;
+          updateDocumentTitle(fundMonthSelect.value);
+        });
+      }
+
+      /**
+       * Đánh lại Số thứ tự (Cột 1) tự động khi Cột 2 (Số tiền) có dữ liệu
+       */
+      function updateRowNumbers() {
+        const rows = expenseTableBody.querySelectorAll('.expense-row');
+        let sequence = 1;
+
+        rows.forEach((row) => {
+          const sttCell = row.querySelector('.stt-cell');
+          const amountInput = row.querySelector('.amount-input');
+          const hasAmount = amountInput && amountInput.value.replace(/[^\d]/g, '').length > 0;
+
+          if (hasAmount) {
+            sttCell.textContent = String(sequence++);
+          } else {
+            sttCell.textContent = '';
+          }
+        });
+      }
+
+      /**
+       * Áp dụng quy ước đổi màu nền hàng và màu chữ dropdown theo lựa chọn ở Cột 4:
+       * - "Bắp" -> xanh lá dịu mắt (#dcfce7), chữ dropdown xanh đậm
+       * - "Kiều" -> vàng dịu mắt (#fef9c3), chữ dropdown nâu vàng đậm
+       * - "Hưng" -> không đổi màu, chữ dropdown đen đậm (#0f172a)
+       * - "" ("-- Chọn --") -> không đổi màu, chữ dropdown xám nhạt nghiêng nhẹ
+       */
+      function applyRowColorByPerson(row, person, selectEl) {
+        row.classList.remove('row-bap', 'row-kieu', 'row-default');
+        if (selectEl) {
+          selectEl.classList.remove(
+            'text-slate-400',
+            'italic',
+            'font-normal',
+            'font-bold',
+            'text-emerald-800',
+            'text-amber-900',
+            'text-[#0f172a]'
+          );
+        }
+
+        if (person === 'Bắp') {
+          row.classList.add('row-bap');
+          if (selectEl) selectEl.classList.add('text-emerald-800', 'font-bold');
+        } else if (person === 'Kiều') {
+          row.classList.add('row-kieu');
+          if (selectEl) selectEl.classList.add('text-amber-900', 'font-bold');
+        } else if (person === 'Hưng') {
+          row.classList.add('row-default');
+          if (selectEl) selectEl.classList.add('text-[#0f172a]', 'font-bold');
+        } else {
+          row.classList.add('row-default');
+          if (selectEl) selectEl.classList.add('text-slate-400', 'italic', 'font-normal');
+        }
+      }
+
+      /**
+       * Tính toán toàn bộ số liệu cho Bảng 1 và Bảng 2 theo thời gian thực
+       */
+      function recalculateAllTotals() {
+        const rows = expenseTableBody.querySelectorAll('.expense-row');
+
+        let totalExpense = 0;
+        let bapTotal = 0;
+        let kieuTotal = 0;
+        let hungTotal = 0;
+
+        rows.forEach((row) => {
+          const amountInput = row.querySelector('.amount-input');
+          const personSelect = row.querySelector('.person-select');
+
+          const amount = parseFormattedNumber(amountInput ? amountInput.value : '');
+          const person = personSelect ? personSelect.value : '';
+
+          totalExpense += amount;
+
+          if (person === 'Bắp') {
+            bapTotal += amount;
+          } else if (person === 'Kiều') {
+            kieuTotal += amount;
+          } else if (person === 'Hưng') {
+            hungTotal += amount;
+          }
+        });
+
+        // Cập nhật Bảng 1
+        totalExpenseCell.textContent = formatNumberWithCommas(totalExpense);
+
+        const fundAmount = parseFormattedNumber(fundAmountInput.value);
+        const remainingAmount = fundAmount - totalExpense;
+        remainingAmountCell.textContent = formatNumberWithCommas(remainingAmount);
+
+        const actualAmount = parseFormattedNumber(actualAmountInput.value);
+        const differenceAmount = actualAmount - remainingAmount;
+        differenceAmountCell.textContent = formatNumberWithCommas(differenceAmount);
+
+        // Cập nhật Bảng 2 ("Số tiền phải trả")
+        bapTotalCell.textContent = formatNumberWithCommas(bapTotal);
+        kieuTotalCell.textContent = formatNumberWithCommas(kieuTotal);
+        hungTotalCell.textContent = formatNumberWithCommas(hungTotal);
+
+        const afterDebtTotal = kieuTotal + hungTotal;
+        afterDebtTotalCell.textContent = formatNumberWithCommas(afterDebtTotal);
+      }
+
+      /**
+       * Tạo một hàng mới cho bảng nhập số liệu 5 cột với đầy đủ hiệu ứng Liquid Glass
+       */
+      function createExpenseRow() {
+        const row = document.createElement('div');
+        row.className = 'expense-row statement-grid row-default items-center transition-colors duration-150';
+
+        // Cột 1: STT (125px)
+        const cellStt = document.createElement('div');
+        cellStt.className = 'stt-cell py-2 px-3 text-center font-semibold text-slate-600 tabular-nums border-r border-slate-200/80 h-full flex items-center justify-center select-none';
+        cellStt.textContent = '';
+
+        // Cột 2: Số tiền (185px) - Liquid Glass
+        const cellAmount = document.createElement('div');
+        cellAmount.className = 'p-1.5 border-r border-slate-200/80';
+        const inputAmount = document.createElement('input');
+        inputAmount.type = 'text';
+        inputAmount.inputMode = 'numeric';
+        inputAmount.placeholder = '0';
+        inputAmount.ariaLabel = 'Số tiền';
+        inputAmount.className = 'amount-input liquid-glass-input w-full px-2.5 py-1.5 text-right font-bold text-slate-900 placeholder-slate-400/80 tabular-nums rounded-xl';
+        cellAmount.appendChild(inputAmount);
+
+        // Cột 3: Mục chi (1fr, tối thiểu 230px) - Liquid Glass
+        const cellDesc = document.createElement('div');
+        cellDesc.className = 'p-1.5 border-r border-slate-200/80';
+        const inputDesc = document.createElement('input');
+        inputDesc.type = 'text';
+        inputDesc.placeholder = 'Nhập nội dung chi...';
+        inputDesc.ariaLabel = 'Mục chi';
+        inputDesc.className = 'desc-input liquid-glass-input w-full px-3 py-1.5 text-left text-slate-800 placeholder-slate-400 rounded-xl';
+        cellDesc.appendChild(inputDesc);
+
+        // Cột 4: Người chi (155px) - Menu chọn Liquid Glass (mặc định "-- Chọn --", gồm "Bắp", "Hưng", "Kiều")
+        const cellPerson = document.createElement('div');
+        cellPerson.className = 'p-1.5 border-r border-slate-200/80';
+        const selectPerson = document.createElement('select');
+        selectPerson.ariaLabel = 'Người chi';
+        selectPerson.className = 'person-select liquid-glass-input liquid-glass-select w-full pl-3 py-1.5 text-center text-slate-400 italic font-normal rounded-xl cursor-pointer';
+
+        const placeholderOpt = document.createElement('option');
+        placeholderOpt.value = '';
+        placeholderOpt.textContent = '-- Chọn --';
+        placeholderOpt.selected = true;
+        placeholderOpt.className = 'bg-white text-slate-400 italic font-normal';
+        selectPerson.appendChild(placeholderOpt);
+
+        const options = ['Bắp', 'Hưng', 'Kiều'];
+        options.forEach((personName) => {
+          const opt = document.createElement('option');
+          opt.value = personName;
+          opt.textContent = personName;
+          opt.className = 'bg-white text-slate-900 not-italic font-semibold';
+          selectPerson.appendChild(opt);
+        });
+        cellPerson.appendChild(selectPerson);
+
+        // Cột 5: Chọn xóa (125px) - Checkbox ở giữa cột
+        const cellDelete = document.createElement('div');
+        cellDelete.className = 'col-delete py-2 px-2 text-center h-full flex items-center justify-center';
+        const checkboxDelete = document.createElement('input');
+        checkboxDelete.type = 'checkbox';
+        checkboxDelete.ariaLabel = 'Chọn xóa hàng';
+        checkboxDelete.className = 'delete-checkbox w-4 h-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer accent-rose-600';
+        cellDelete.appendChild(checkboxDelete);
+
+        row.appendChild(cellStt);
+        row.appendChild(cellAmount);
+        row.appendChild(cellDesc);
+        row.appendChild(cellPerson);
+        row.appendChild(cellDelete);
+
+        // Sự kiện nhập số tiền
+        inputAmount.addEventListener('input', () => {
+          handleLiveCurrencyInput(inputAmount, false);
+          updateRowNumbers();
+          recalculateAllTotals();
+        });
+
+        // Sự kiện đổi người chi -> đổi màu hàng & cập nhật màu chữ dropdown
+        selectPerson.addEventListener('change', () => {
+          applyRowColorByPerson(row, selectPerson.value, selectPerson);
+          recalculateAllTotals();
+        });
+
+        // Sự kiện tick checkbox -> hiệu ứng viền nhẹ báo hiệu hàng đang chọn xóa
+        checkboxDelete.addEventListener('change', () => {
+          row.classList.toggle('row-marked-delete', checkboxDelete.checked);
+        });
+
+        return row;
+      }
+
+      // Nút 1: Thêm hàng mới vào cuối bảng
+      btnAddRow.addEventListener('click', () => {
+        const newRow = createExpenseRow();
+        expenseTableBody.appendChild(newRow);
+        const amountInput = newRow.querySelector('.amount-input');
+        if (amountInput) {
+          amountInput.focus();
+        }
+        showToast('Đã thêm 1 hàng mới vào bảng.', 'info');
+      });
+
+      // Nút 2: Xóa các hàng được tick chọn ở cột 5 & dồn hàng + đánh lại STT
+      btnDeleteRows.addEventListener('click', () => {
+        const checkedBoxes = expenseTableBody.querySelectorAll('.delete-checkbox:checked');
+        if (checkedBoxes.length === 0) {
+          showToast('Vui lòng tick chọn ít nhất 1 hàng ở cột "Chọn xóa".', 'warning');
+          return;
+        }
+
+        const deletedCount = checkedBoxes.length;
+        checkedBoxes.forEach((checkbox) => {
+          const row = checkbox.closest('.expense-row');
+          if (row) row.remove();
+        });
+
+        // Đảm bảo bảng luôn có tối thiểu 1 hàng để tiếp tục nhập liệu
+        if (expenseTableBody.querySelectorAll('.expense-row').length === 0) {
+          expenseTableBody.appendChild(createExpenseRow());
+        }
+
+        updateRowNumbers();
+        recalculateAllTotals();
+        showToast(`Đã xóa ${deletedCount} hàng và cập nhật lại số thứ tự.`, 'success');
+      });
+
+      // Nút 3: Tất toán - Xóa toàn bộ hàng trống không có dữ liệu & hiển thị 2 bảng tổng hợp
+      btnSettle.addEventListener('click', () => {
+        const allRows = Array.from(expenseTableBody.querySelectorAll('.expense-row'));
+        let removedEmptyCount = 0;
+
+        allRows.forEach((row) => {
+          const amountVal = (row.querySelector('.amount-input')?.value || '').trim();
+          const descVal = (row.querySelector('.desc-input')?.value || '').trim();
+          const personVal = (row.querySelector('.person-select')?.value || '').trim();
+
+          if (amountVal === '' && descVal === '' && personVal === '') {
+            row.remove();
+            removedEmptyCount++;
+          }
+        });
+
+        // Giữ lại tối thiểu 1 hàng nếu tất cả đều trống
+        if (expenseTableBody.querySelectorAll('.expense-row').length === 0) {
+          expenseTableBody.appendChild(createExpenseRow());
+        }
+
+        updateRowNumbers();
+        recalculateAllTotals();
+
+        settlementSection.classList.remove('hidden');
+        setSettleActions(true);
+        settlementSection.classList.remove('animate-settlement');
+        void settlementSection.offsetWidth;
+        settlementSection.classList.add('animate-settlement');
+
+        settlementSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        if (removedEmptyCount > 0) {
+          showToast(`Đã dọn ${removedEmptyCount} hàng trống và hoàn tất bảng tổng hợp.`, 'success');
+        } else {
+          showToast('Đã cập nhật bảng tổng hợp tất toán.', 'success');
+        }
+      });
+
+      // Nút 4: Xuất PDF (mặc định xoay ngang A4 Landscape)
+      btnExportPdf.addEventListener('click', () => {
+        updateDocumentTitle(headerMonthSelect.value);
+        window.print();
+      });
+
+      // Lắng nghe nhập liệu trực tiếp cho ô "Quỹ tháng" và "Thực tế" trong Bảng 1
+      fundAmountInput.addEventListener('input', () => {
+        handleLiveCurrencyInput(fundAmountInput, true);
+        recalculateAllTotals();
+      });
+
+      actualAmountInput.addEventListener('input', () => {
+        handleLiveCurrencyInput(actualAmountInput, true);
+        recalculateAllTotals();
+      });
+
+      // Khởi tạo ứng dụng với 15 hàng mặc định
+      function init() {
+        initMonthDropdowns();
+        for (let i = 0; i < DEFAULT_ROW_COUNT; i++) {
+          expenseTableBody.appendChild(createExpenseRow());
+        }
+        recalculateAllTotals();
+      }
+
+
+      /* ================= ĐĂNG NHẬP BẰNG MẬT KHẨU ================= */
+      const LS_PW = 'sk_pw_hash';
+      const LS_ARCHIVE = 'sk_archive';
+      const SS_UNLOCKED = 'sk_unlocked';
+      const SECRET_CODE = '190405';
+
+      const lockScreen = document.getElementById('lockScreen');
+      const lockTitle = document.getElementById('lockTitle');
+      const lockDesc = document.getElementById('lockDesc');
+      const lockForm = document.getElementById('lockForm');
+      const lockSecret = document.getElementById('lockSecret');
+      const lockPw = document.getElementById('lockPw');
+      const lockPw2 = document.getElementById('lockPw2');
+      const lockError = document.getElementById('lockError');
+      const lockSubmit = document.getElementById('lockSubmit');
+      const lockDelete = document.getElementById('lockDelete');
+      const lockLink = document.getElementById('lockLink');
+
+      let lockMode = 'login'; // setup | login | secret | newpw
+
+      function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+      function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+      function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+      function ssGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+      function ssSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
+      function ssDel(k) { try { sessionStorage.removeItem(k); } catch (e) {} }
+
+      function fallbackHash(str) {
+        let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+        for (let i = 0; i < str.length; i++) {
+          const ch = str.charCodeAt(i);
+          h1 = Math.imul(h1 ^ ch, 2654435761);
+          h2 = Math.imul(h2 ^ ch, 1597334677);
+        }
+        h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+        h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+        return 'b:' + (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
+      }
+
+      async function hashPassword(text) {
+        try {
+          if (window.crypto && crypto.subtle) {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('sk|' + text));
+            return 'a:' + Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+          }
+        } catch (e) { /* dùng phương án dự phòng */ }
+        return fallbackHash('sk|' + text);
+      }
+
+      function setLockMode(mode) {
+        lockMode = mode;
+        lockError.textContent = '';
+        [lockSecret, lockPw, lockPw2].forEach((el) => { el.value = ''; el.classList.add('hidden'); });
+        lockDelete.classList.add('hidden');
+        lockLink.classList.remove('hidden');
+
+        if (mode === 'setup') {
+          lockTitle.textContent = 'Tạo mật khẩu';
+          lockDesc.textContent = 'Lần đầu sử dụng: hãy đặt mật khẩu để đăng nhập các lần sau.';
+          lockPw.classList.remove('hidden'); lockPw2.classList.remove('hidden');
+          lockSubmit.textContent = 'Lưu mật khẩu & vào';
+          lockLink.classList.add('hidden');
+          lockPw.focus();
+        } else if (mode === 'login') {
+          lockTitle.textContent = 'Đăng nhập';
+          lockDesc.textContent = 'Nhập mật khẩu để mở bảng sao kê.';
+          lockPw.classList.remove('hidden');
+          lockSubmit.textContent = 'Đăng nhập';
+          lockLink.textContent = 'Đổi hoặc xóa mật khẩu';
+          lockPw.focus();
+        } else if (mode === 'secret') {
+          lockTitle.textContent = 'Mật khẩu bí mật';
+          lockDesc.textContent = 'Nhập mật khẩu bí mật để đổi hoặc xóa mật khẩu đăng nhập.';
+          lockSecret.classList.remove('hidden');
+          lockSubmit.textContent = 'Xác nhận';
+          lockLink.textContent = '← Quay lại';
+          lockSecret.focus();
+        } else if (mode === 'newpw') {
+          lockTitle.textContent = 'Đổi mật khẩu';
+          lockDesc.textContent = 'Nhập mật khẩu mới, hoặc xóa mật khẩu hiện tại.';
+          lockPw.classList.remove('hidden'); lockPw2.classList.remove('hidden');
+          lockPw.placeholder = 'Mật khẩu mới';
+          lockSubmit.textContent = 'Lưu mật khẩu mới';
+          lockDelete.classList.remove('hidden');
+          lockLink.textContent = '← Quay lại';
+          lockPw.focus();
+        }
+        if (mode !== 'newpw') lockPw.placeholder = 'Mật khẩu';
+      }
+
+      function showLock(mode) {
+        document.body.classList.add('is-locked');
+        lockScreen.classList.remove('hidden');
+        setLockMode(mode);
+      }
+
+      function unlock() {
+        ssSet(SS_UNLOCKED, '1');
+        document.body.classList.remove('is-locked');
+        lockScreen.classList.add('hidden');
+      }
+
+      function backFromLock() {
+        // Nếu đã đăng nhập (mở từ nút Đổi mật khẩu) thì đóng lớp phủ, còn không về màn đăng nhập
+        if (ssGet(SS_UNLOCKED) === '1') {
+          document.body.classList.remove('is-locked');
+          lockScreen.classList.add('hidden');
+        } else {
+          setLockMode(lsGet(LS_PW) ? 'login' : 'setup');
+        }
+      }
+
+      lockForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        lockError.textContent = '';
+
+        if (lockMode === 'setup' || lockMode === 'newpw') {
+          const pw = lockPw.value;
+          if (pw.length < 4) { lockError.textContent = 'Mật khẩu cần ít nhất 4 ký tự.'; return; }
+          if (pw !== lockPw2.value) { lockError.textContent = 'Hai lần nhập mật khẩu chưa khớp.'; return; }
+          if (!lsSet(LS_PW, await hashPassword(pw))) { lockError.textContent = 'Không lưu được mật khẩu (trình duyệt chặn lưu trữ).'; return; }
+          unlock();
+          showToast(lockMode === 'newpw' ? 'Đã đổi mật khẩu.' : 'Đã lưu mật khẩu.', 'success');
+        } else if (lockMode === 'login') {
+          const stored = lsGet(LS_PW);
+          if (stored && (await hashPassword(lockPw.value)) === stored) {
+            unlock();
+          } else {
+            lockError.textContent = 'Mật khẩu không đúng.';
+            lockPw.select();
+          }
+        } else if (lockMode === 'secret') {
+          if (lockSecret.value === SECRET_CODE) {
+            setLockMode('newpw');
+          } else {
+            lockError.textContent = 'Mật khẩu bí mật không đúng.';
+            lockSecret.select();
+          }
+        }
+      });
+
+      lockLink.addEventListener('click', () => {
+        if (lockMode === 'login') setLockMode('secret');
+        else backFromLock();
+      });
+
+      lockDelete.addEventListener('click', () => {
+        lsDel(LS_PW);
+        ssDel(SS_UNLOCKED);
+        showLock('setup');
+        showToast('Đã xóa mật khẩu. Hãy tạo mật khẩu mới.', 'info');
+      });
+
+      document.getElementById('btnLogout').addEventListener('click', () => {
+        ssDel(SS_UNLOCKED);
+        showLock(lsGet(LS_PW) ? 'login' : 'setup');
+      });
+
+      document.getElementById('btnChangePw').addEventListener('click', () => {
+        document.body.classList.add('is-locked');
+        lockScreen.classList.remove('hidden');
+        setLockMode('secret');
+      });
+
+      /* ================= KHO LƯU TRỮ ================= */
+      const archiveModal = document.getElementById('archiveModal');
+      const archiveBody = document.getElementById('archiveBody');
+      const archiveTitle = document.getElementById('archiveTitle');
+      const archiveBack = document.getElementById('archiveBack');
+
+      function esc(t) {
+        return String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+
+      function loadArchive() {
+        try {
+          const arr = JSON.parse(lsGet(LS_ARCHIVE) || '[]');
+          return Array.isArray(arr) ? arr : [];
+        } catch (e) { return []; }
+      }
+
+      function formatDateTime(iso) {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '';
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+
+      function buildSnapshot() {
+        const rows = [];
+        expenseTableBody.querySelectorAll('.expense-row').forEach((row) => {
+          const amount = row.querySelector('.amount-input').value.trim();
+          const desc = row.querySelector('.desc-input').value.trim();
+          const person = row.querySelector('.person-select').value;
+          if (amount || desc || person) rows.push({ amount, desc, person });
+        });
+        const sumBy = (p) => rows.filter((r) => !p || r.person === p).reduce((s, r) => s + parseFormattedNumber(r.amount), 0);
+        const total = sumBy('');
+        const fund = parseFormattedNumber(fundAmountInput.value);
+        const actual = parseFormattedNumber(actualAmountInput.value);
+        const remaining = fund - total;
+        const kieu = sumBy('Kiều');
+        const hung = sumBy('Hưng');
+        return {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          savedAt: new Date().toISOString(),
+          month: headerMonthSelect.value,
+          rows,
+          notes: Array.from(document.querySelectorAll('.note-input')).map((i) => i.value),
+          total, fund, remaining, actual, diff: actual - remaining,
+          bap: sumBy('Bắp'), kieu, hung, afterDebt: kieu + hung
+        };
+      }
+
+      document.getElementById('btnArchiveSave').addEventListener('click', () => {
+        const snap = buildSnapshot();
+        if (snap.rows.length === 0) {
+          showToast('Bảng đang trống, chưa có gì để lưu.', 'warning');
+          return;
+        }
+        const list = loadArchive();
+        list.unshift(snap);
+        if (lsSet(LS_ARCHIVE, JSON.stringify(list))) {
+          showToast(`Đã lưu sao kê tháng ${snap.month} vào kho lưu trữ.`, 'success');
+        } else {
+          showToast('Không lưu được (trình duyệt chặn lưu trữ).', 'warning');
+        }
+      });
+
+      function renderArchiveList() {
+        archiveTitle.textContent = 'Kho lưu trữ';
+        archiveBack.classList.add('hidden');
+        const list = loadArchive();
+        if (list.length === 0) {
+          archiveBody.innerHTML = '<p class="text-center text-slate-500 py-10">Chưa có bản lưu nào. Bấm "Lưu trữ" để lưu bảng hiện tại.</p>';
+          return;
+        }
+        archiveBody.innerHTML = '<div class="space-y-2">' + list.map((it) => `
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-300/80 bg-white/70 px-4 py-3">
+            <div>
+              <div class="font-bold text-slate-900">Sao kê tháng ${esc(it.month)}</div>
+              <div class="text-xs text-slate-600">Ngày lưu: <span class="font-semibold">${esc(formatDateTime(it.savedAt))}</span> · Tổng tiền: <span class="font-semibold text-red-600">${formatNumberWithCommas(it.total)}</span></div>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" data-view="${esc(it.id)}" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold cursor-pointer">Xem</button>
+              <button type="button" data-del="${esc(it.id)}" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-sm font-semibold cursor-pointer">Xóa</button>
+            </div>
+          </div>`).join('') + '</div>';
+      }
+
+      function renderArchiveDetail(id) {
+        const it = loadArchive().find((x) => x.id === id);
+        if (!it) { renderArchiveList(); return; }
+        archiveTitle.textContent = `Sao kê tháng ${it.month} · ${formatDateTime(it.savedAt)}`;
+        archiveBack.classList.remove('hidden');
+        const bg = { 'Bắp': 'background:#dcfce7', 'Kiều': 'background:#fef9c3' };
+        const rowsHtml = it.rows.map((r, i) => `
+          <tr style="${bg[r.person] || ''}" class="border-t border-slate-200">
+            <td class="px-3 py-2 text-center text-slate-600">${i + 1}</td>
+            <td class="px-3 py-2 text-right font-bold tabular-nums">${esc(r.amount || '0')}</td>
+            <td class="px-3 py-2">${esc(r.desc)}</td>
+            <td class="px-3 py-2 text-center font-semibold">${esc(r.person || '—')}</td>
+          </tr>`).join('');
+        const n = it.notes || [];
+        const sum = (label, val, note, cls) => `
+          <tr class="border-t border-slate-200"><td class="px-3 py-2 font-semibold">${label}</td>
+          <td class="px-3 py-2 text-right font-bold tabular-nums ${cls || ''}">${formatNumberWithCommas(val)}</td>
+          <td class="px-3 py-2 text-slate-600">${esc(note || '')}</td></tr>`;
+        archiveBody.innerHTML = `
+          <div class="overflow-x-auto rounded-2xl border border-slate-300/80 bg-white/70 mb-4">
+            <table class="w-full text-sm"><thead class="bg-[#0f172a] text-white text-xs uppercase">
+              <tr><th class="px-3 py-2">STT</th><th class="px-3 py-2 text-right">Số tiền</th><th class="px-3 py-2 text-left">Mục chi</th><th class="px-3 py-2">Người chi</th></tr>
+            </thead><tbody>${rowsHtml}</tbody></table>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="overflow-x-auto rounded-2xl border border-slate-300/80 bg-white/70">
+              <table class="w-full text-sm"><tbody>
+                ${sum('Tổng tiền', it.total, n[0], 'text-red-600')}
+                ${sum(`Quỹ tháng ${esc(it.month)}`, it.fund, n[1])}
+                ${sum('Còn lại', it.remaining, n[2])}
+                ${sum('Thực tế', it.actual, n[3])}
+                ${sum('Chênh lệch', it.diff, n[4])}
+              </tbody></table>
+            </div>
+            <div class="rounded-2xl border border-slate-300/80 overflow-hidden text-sm">
+              <div class="bg-slate-800 text-white text-xs uppercase font-bold text-center py-2">Số tiền phải trả</div>
+              <div class="flex justify-between px-3 py-2" style="background:#dcfce7"><span class="font-semibold">Bắp tiêu</span><b class="tabular-nums">${formatNumberWithCommas(it.bap)}</b></div>
+              <div class="flex justify-between px-3 py-2" style="background:#fef9c3"><span class="font-semibold">Kiều tiêu</span><b class="tabular-nums">${formatNumberWithCommas(it.kieu)}</b></div>
+              <div class="flex justify-between px-3 py-2 bg-white"><span class="font-semibold">Hưng tiêu</span><b class="tabular-nums">${formatNumberWithCommas(it.hung)}</b></div>
+              <div class="flex justify-between px-3 py-2 bg-rose-50 text-red-600"><b>Tiền sau trả nợ</b><b class="tabular-nums">${formatNumberWithCommas(it.afterDebt)}</b></div>
+            </div>
+          </div>`;
+      }
+
+      let pendingDeleteId = null;
+      let pendingDeleteTimer = null;
+
+      archiveBody.addEventListener('click', (e) => {
+        const viewBtn = e.target.closest('[data-view]');
+        const delBtn = e.target.closest('[data-del]');
+        if (viewBtn) { renderArchiveDetail(viewBtn.dataset.view); return; }
+        if (delBtn) {
+          const id = delBtn.dataset.del;
+          if (pendingDeleteId === id) {
+            clearTimeout(pendingDeleteTimer);
+            pendingDeleteId = null;
+            lsSet(LS_ARCHIVE, JSON.stringify(loadArchive().filter((x) => x.id !== id)));
+            renderArchiveList();
+            showToast('Đã xóa bản lưu.', 'success');
+          } else {
+            pendingDeleteId = id;
+            delBtn.textContent = 'Bấm lần nữa để xóa';
+            delBtn.classList.add('bg-rose-600', 'text-white');
+            clearTimeout(pendingDeleteTimer);
+            pendingDeleteTimer = setTimeout(() => { pendingDeleteId = null; if (!archiveModal.classList.contains('hidden') && archiveBack.classList.contains('hidden')) renderArchiveList(); }, 3000);
+          }
+        }
+      });
+
+      archiveBack.addEventListener('click', renderArchiveList);
+      document.getElementById('btnOpenArchive').addEventListener('click', () => {
+        renderArchiveList();
+        archiveModal.classList.remove('hidden');
+      });
+      document.getElementById('archiveClose').addEventListener('click', () => archiveModal.classList.add('hidden'));
+      archiveModal.addEventListener('click', (e) => { if (e.target === archiveModal) archiveModal.classList.add('hidden'); });
+
+      function setSettleActions(show) {
+        document.getElementById('settleActions').style.display = show ? 'flex' : 'none';
+      }
+
+      /* ================= XÓA TOÀN BỘ TRANG LÀM VIỆC ================= */
+      const btnClearAll = document.getElementById('btnClearAll');
+      const btnClearAllLabel = document.getElementById('btnClearAllLabel');
+      let clearArmed = false;
+      let clearTimer = null;
+
+      function disarmClear() {
+        clearArmed = false;
+        clearTimeout(clearTimer);
+        btnClearAllLabel.textContent = 'Xóa toàn bộ';
+      }
+
+      btnClearAll.addEventListener('click', () => {
+        if (!clearArmed) {
+          clearArmed = true;
+          btnClearAllLabel.textContent = 'Bấm lần nữa để xác nhận';
+          clearTimer = setTimeout(disarmClear, 3500);
+          return;
+        }
+        disarmClear();
+        expenseTableBody.innerHTML = '';
+        for (let i = 0; i < DEFAULT_ROW_COUNT; i++) {
+          expenseTableBody.appendChild(createExpenseRow());
+        }
+        fundAmountInput.value = '';
+        actualAmountInput.value = '';
+        document.querySelectorAll('.note-input').forEach((i) => { i.value = ''; });
+        settlementSection.classList.add('hidden');
+        setSettleActions(false);
+        updateRowNumbers();
+        recalculateAllTotals();
+        showToast('Đã xóa toàn bộ dữ liệu trang làm việc.', 'success');
+      });
+
+      /* ================= LƯU DỮ LIỆU ĐANG NHẬP (BẢN NHÁP) ================= */
+      const LS_DRAFT = 'sk_draft';
+      let draftDirty = false;
+
+      function saveDraft() {
+        const snap = buildSnapshot();
+        const data = {
+          savedAt: new Date().toISOString(),
+          month: headerMonthSelect.value,
+          fundMonth: fundMonthSelect.value,
+          rows: snap.rows,
+          fund: fundAmountInput.value,
+          actual: actualAmountInput.value,
+          notes: snap.notes,
+          settlementOpen: !settlementSection.classList.contains('hidden')
+        };
+        if (lsSet(LS_DRAFT, JSON.stringify(data))) {
+          draftDirty = false;
+          showToast('Đã lưu dữ liệu lúc ' + formatDateTime(data.savedAt).slice(11) + '. Lần sau mở lại sẽ tự khôi phục.', 'success');
+        } else {
+          showToast('Không lưu được (trình duyệt chặn lưu trữ).', 'warning');
+        }
+      }
+
+      function restoreDraft() {
+        let data = null;
+        try { data = JSON.parse(lsGet(LS_DRAFT) || 'null'); } catch (e) {}
+        if (!data || !Array.isArray(data.rows)) return;
+
+        if (data.month) { headerMonthSelect.value = data.month; headerMonthSelect.dispatchEvent(new Event('change')); }
+        if (data.fundMonth) { fundMonthSelect.value = data.fundMonth; fundMonthSelect.dispatchEvent(new Event('change')); }
+
+        expenseTableBody.innerHTML = '';
+        const count = Math.max(data.rows.length, DEFAULT_ROW_COUNT);
+        for (let i = 0; i < count; i++) {
+          const row = createExpenseRow();
+          expenseTableBody.appendChild(row);
+          const r = data.rows[i];
+          if (!r) continue;
+          const amountEl = row.querySelector('.amount-input');
+          const descEl = row.querySelector('.desc-input');
+          const personEl = row.querySelector('.person-select');
+          amountEl.value = r.amount || '';
+          descEl.value = r.desc || '';
+          personEl.value = r.person || '';
+          amountEl.dispatchEvent(new Event('input', { bubbles: true }));
+          personEl.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        fundAmountInput.value = data.fund || '';
+        actualAmountInput.value = data.actual || '';
+        fundAmountInput.dispatchEvent(new Event('input', { bubbles: true }));
+        actualAmountInput.dispatchEvent(new Event('input', { bubbles: true }));
+        document.querySelectorAll('.note-input').forEach((el, i) => { el.value = (data.notes && data.notes[i]) || ''; });
+
+        if (data.settlementOpen) { settlementSection.classList.remove('hidden'); setSettleActions(true); }
+        updateRowNumbers();
+        recalculateAllTotals();
+        draftDirty = false;
+      }
+
+      document.getElementById('btnSaveDraft').addEventListener('click', saveDraft);
+
+      // Đánh dấu có thay đổi chưa lưu (bỏ qua ô nhập mật khẩu)
+      const markDirty = (e) => { if (!e.target.closest('#lockScreen')) draftDirty = true; };
+      document.addEventListener('input', markDirty);
+      document.addEventListener('change', markDirty);
+      window.addEventListener('beforeunload', (e) => {
+        if (draftDirty) { e.preventDefault(); e.returnValue = ''; }
+      });
+
+      /* ================= XUẤT HÌNH ẢNH PNG ================= */
+      const btnExportPng = document.getElementById('btnExportPng');
+      const btnExportPngLabel = document.getElementById('btnExportPngLabel');
+
+      // Thay ô nhập/ô chọn trong bản sao bằng khối chữ thường để chữ không bị lệch hay mất khi chụp
+      function flattenFields(liveCard, cloneCard) {
+        const live = liveCard.querySelectorAll('input, select, textarea');
+        const copy = cloneCard.querySelectorAll('input, select, textarea');
+        live.forEach((orig, i) => {
+          const cl = copy[i];
+          if (!cl || orig.type === 'checkbox' || orig.type === 'hidden') return;
+          const cs = getComputedStyle(orig);
+          const rect = orig.getBoundingClientRect();
+          let text = orig.tagName === 'SELECT'
+            ? (orig.selectedOptions[0] ? orig.selectedOptions[0].text : '')
+            : orig.value;
+          let color = cs.color;
+          if (!text && orig.placeholder) { text = orig.placeholder; color = '#94a3b8'; }
+          if (orig.tagName === 'SELECT' && /^-+/.test(text.trim())) { text = ''; }
+          const box = document.createElement('div');
+          box.className = cl.className;
+          box.setAttribute('data-png-field', '1');
+          box.textContent = text;
+          const align = cs.textAlign;
+          Object.assign(box.style, {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: align === 'right' || align === 'end' ? 'flex-end' : (align === 'center' ? 'center' : 'flex-start'),
+            boxSizing: 'border-box',
+            width: rect.width + 'px',
+            height: rect.height + 'px',
+            paddingTop: '0px',
+            paddingBottom: '0px',
+            paddingLeft: cs.paddingLeft,
+            paddingRight: cs.paddingRight,
+            fontFamily: cs.fontFamily,
+            fontSize: cs.fontSize,
+            fontWeight: cs.fontWeight,
+            lineHeight: 'normal',
+            color,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap'
+          });
+          cl.replaceWith(box);
+        });
+      }
+
+      btnExportPng.addEventListener('click', async () => {
+        if (!window.htmlToImage || typeof window.htmlToImage.toPng !== 'function') {
+          showToast('Chưa tải được thư viện xuất ảnh. Hãy kiểm tra kết nối mạng rồi tải lại trang.', 'warning');
+          return;
+        }
+        const card = document.getElementById('sheetCard');
+        btnExportPng.disabled = true;
+        btnExportPngLabel.textContent = 'Đang xuất...';
+
+        // Bản sao đặt ngoài màn hình, giữ nguyên bề rộng hiện tại để bố cục không đổi
+        const holder = document.createElement('div');
+        holder.className = 'png-export';
+        holder.style.cssText = 'position:fixed;left:-100000px;top:0;background:#ffffff;width:' + card.offsetWidth + 'px;';
+        const clone = card.cloneNode(true);
+        clone.removeAttribute('id');
+        holder.appendChild(clone);
+        document.body.appendChild(holder);
+
+        try {
+          flattenFields(card, clone);
+          if (document.fonts && document.fonts.ready) { await document.fonts.ready; }
+          const dataUrl = await window.htmlToImage.toPng(clone, {
+            pixelRatio: 2,
+            backgroundColor: '#ffffff',
+            cacheBust: false
+          });
+          const a = document.createElement('a');
+          a.href = dataUrl;
+          a.download = `sao-ke-thang-${headerMonthSelect.value}.png`;
+          document.body.appendChild(a); a.click(); a.remove();
+          showToast('Đã xuất hình ảnh PNG.', 'success');
+        } catch (err) {
+          showToast('Xuất PNG không thành công, vui lòng thử lại.', 'warning');
+        } finally {
+          holder.remove();
+          btnExportPng.disabled = false;
+          btnExportPngLabel.textContent = 'Xuất PNG';
+        }
+      });
+
+      /* ================= KHỞI TẠO ================= */
+      if (ssGet(SS_UNLOCKED) === '1' && lsGet(LS_PW)) {
+        unlock();
+      } else {
+        showLock(lsGet(LS_PW) ? 'login' : 'setup');
+      }
+
+      init();
+      restoreDraft();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "Sao Kê Chi Tiêu",
+  "description": "Ứng dụng Android & PWA quản lý sao kê chi tiêu hàng tháng, tự động tính toán tất toán, lưu trữ ngoại tuyến và hỗ trợ đóng gói APK.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
